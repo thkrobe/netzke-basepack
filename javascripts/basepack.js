@@ -117,7 +117,7 @@ Ext.util.Format.mask = function(v){
 Ext.define('Ext.ux.form.TriCheckbox', {
   extend: 'Ext.form.field.ComboBox',
   alias: 'widget.tricheckbox',
-  store: [[true, "Yes"], [false, "No"]],
+  store: [[true, "确定"], [false, "取消"]],
   forceSelection: true
 });
 
