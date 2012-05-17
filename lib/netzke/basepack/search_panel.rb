@@ -39,6 +39,11 @@ module Netzke
           ["eq", I18n.t('netzke.basepack.search_panel.date_equals')],
           ["gt", I18n.t('netzke.basepack.search_panel.after')],
           ["lt", I18n.t('netzke.basepack.search_panel.before')]
+        ],
+        :date => [
+          ["eq", I18n.t('netzke.basepack.search_panel.date_equals')],
+          ["gt", I18n.t('netzke.basepack.search_panel.after')],
+          ["lt", I18n.t('netzke.basepack.search_panel.before')]
         ]
       }
 
