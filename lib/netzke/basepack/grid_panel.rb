@@ -371,7 +371,7 @@ module Netzke
         {
           :lazy_loading => true,
           :class_name => "Netzke::Basepack::GridPanel::RecordFormWindow",
-          :title => "Add #{data_class.model_name.human}",
+          :title => "#{I18n.t('netzke.basepack.grid_panel.record_form_window.titles.add')}#{data_class.model_name.human}",
           :button_align => "right",
           :items => [form_config.deep_merge(config[:add_form_config] || {})]
         }.deep_merge(config[:add_form_window_config] || {})
@@ -394,7 +394,7 @@ module Netzke
         {
           :lazy_loading => true,
           :class_name => "Netzke::Basepack::GridPanel::RecordFormWindow",
-          :title => "Edit #{data_class.model_name.human}",
+          :title => "#{I18n.t('netzke.basepack.grid_panel.record_form_window.titles.edit')}#{data_class.model_name.human}",
           :button_align => "right",
           :items => [form_config.deep_merge(config[:edit_form_config] || {})]
         }.deep_merge(config[:edit_form_window_config] || {})
@@ -418,7 +418,7 @@ module Netzke
         {
           :lazy_loading => true,
           :class_name => "Netzke::Basepack::GridPanel::RecordFormWindow",
-          :title => "Edit #{data_class.model_name.human.pluralize}",
+          :title => "#{I18n.t('netzke.basepack.grid_panel.record_form_window.titles.edit')}#{data_class.model_name.human.pluralize}",
           :button_align => "right",
           :items => [form_config.deep_merge(config[:multi_edit_form_config] || {})]
         }.deep_merge(config[:multi_edit_form_window_config] || {})
