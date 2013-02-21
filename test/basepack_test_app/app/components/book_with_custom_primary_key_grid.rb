@@ -1,10 +1,9 @@
-class BookWithCustomPrimaryKeyGrid < Netzke::Basepack::GridPanel
+class BookWithCustomPrimaryKeyGrid < Netzke::Basepack::Grid
 
-  js_property :title, "Books (model with non-standard id)"
-
-  def default_config
-    super.merge(
-      :model => "BookWithCustomPrimaryKey"
-    )
+  def configure(c)
+    c.title = "Books (model with non-standard id)"
+    c.model = "BookWithCustomPrimaryKey"
+    super
   end
+
 end

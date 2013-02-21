@@ -1,87 +1,50 @@
 module Netzke
   module Basepack
+    # Search query builder used in Grid's advanced search
     class QueryBuilder < Netzke::Base
-      js_base_class "Ext.tab.Panel"
-
-      js_property :active_tab, 0
-
-      js_translate :overwrite_confirm, :overwrite_confirm_title, :delete_confirm, :delete_confirm_title
-
-      js_mixin :query_builder
-
-      component :search_panel do
-        {
-          :class_name => "Netzke::Basepack::SearchPanel",
-          :model => config[:model],
-          :fields => config[:fields],
-          :preset_query => config[:query],
-          :auto_scroll => config[:auto_scroll]
-        }
+      js_configure do |c|
+        c.extend = "Ext.tab.Panel"
+        c.active_tab = 0
+        c.translate :overwrite_confirm, :overwrite_confirm_title, :delete_confirm, :delete_confirm_title
+        c.mixin
       end
 
-      action :clear_all do
-        {
-          :text => I18n.t('netzke.basepack.query_builder.actions.clear_all'),
-          :tooltip => I18n.t('netzke.basepack.query_builder.actions.clear_all_tooltip'),
-          :icon => :cross
-        }
+      component :search_panel do |c|
+        c.klass = SearchPanel
+        c.model = config[:model]
+        c.fields = config[:fields]
+        c.preset_query = config[:query]
+        c.auto_scroll = config[:auto_scroll]
+        c.eager_loading = true
       end
 
-      action :reset do
-        {
-          :text => I18n.t('netzke.basepack.query_builder.actions.reset'),
-          :tooltip => I18n.t('netzke.basepack.query_builder.actions.reset_tooltip'),
-          :icon => :application_form
-        }
+      action :clear_all do |a|
+        a.icon = :cross
       end
 
-      action :save_preset do
-        {
-          :text => I18n.t('netzke.basepack.query_builder.actions.save_preset'),
-          :tooltip => I18n.t('netzke.basepack.query_builder.actions.save_preset_tooltip'),
-          :icon => :disk
-        }
+      action :reset do |a|
+        a.icon = :application_form
       end
 
-      action :delete_preset do
-        {
-          :text => I18n.t('netzke.basepack.query_builder.actions.delete_preset'),
-          :tooltip => I18n.t('netzke.basepack.query_builder.actions.delete_preset_tooltip'),
-          :icon => :cross
-        }
+      action :save_preset do |a|
+        a.icon = :disk
       end
 
-      action :apply do
-        {
-          :text => I18n.t('netzke.basepack.query_builder.actions.apply'),
-          :tooltip => I18n.t('netzke.basepack.query_builder.actions.apply_tooltip'),
-          :icon => :accept
-        }
+      action :delete_preset do |a|
+        a.icon = :cross
       end
 
-      def js_config
-        super.tap do |s|
-          s[:bbar] = (config[:bbar] || []) + [:clear_all.action, :reset.action, "->",
-            I18n.t('netzke.basepack.query_builder.presets'),
-            {
-              :itemId => "presetsCombo",
-              :xtype => "combo",
-              :triggerAction => "all",
-              :value => super[:load_last_preset] && last_preset.try(:fetch, "name"),
-              :store => state[:presets].blank? ? [[[], ""]] : state[:presets].map{ |s| [s["query"], s["name"]] },
-              :ref => "../presetsCombo",
-              :listeners => {:before_select => {
-                :fn => "function(combo, record){
-                  var form = Ext.getCmp('#{global_id}');
-                  form.buildFormFromQuery(record.data.field1);
-                }".l
-              }}
-            }, :save_preset.action, :delete_preset.action
-          ]
-        end
+      action :apply do |a|
+        a.icon = :accept
       end
 
-      endpoint :save_preset do |params|
+      def js_configure(c)
+        super
+        c.preset_store = state[:presets].blank? ? [[[], ""]] : state[:presets].map{ |s| [s["query"], s["name"]] }
+        c.bbar = (config[:bbar] || []) + [:clear_all, :reset, "->", I18n.t('netzke.basepack.query_builder.presets'), :preset_selector, :save_preset, :delete_preset ]
+      end
+
+      endpoint :save_preset do |params, this|
         saved_searches = state[:presets] || []
         existing = saved_searches.detect{ |s| s["name"] == params[:name] }
         query = ActiveSupport::JSON.decode(params[:query])
@@ -90,18 +53,16 @@ module Netzke
         else
           saved_searches << {"name" => params[:name], "query" => query}
         end
-        update_state(:presets, saved_searches)
-        {:netzke_feedback => I18n.t('netzke.basepack.query_builder.preset_saved')}
+        state[:presets] = saved_searches
+        this.netzke_feedback(I18n.t('netzke.basepack.query_builder.preset_saved'))
       end
 
-      endpoint :delete_preset do |params|
+      endpoint :delete_preset do |params, this|
         saved_searches = state[:presets]
         saved_searches.delete_if{ |s| s["name"] == params[:name] }
-        update_state(:presets, saved_searches)
-        {:netzke_feedback => I18n.t('netzke.basepack.query_builder.preset_deleted')}
+        state[:presets] = saved_searches
+        this.netzke_feedback(I18n.t('netzke.basepack.query_builder.preset_deleted'))
       end
-
-
     end
   end
 end

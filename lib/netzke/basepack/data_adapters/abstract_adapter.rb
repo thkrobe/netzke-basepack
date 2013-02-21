@@ -1,6 +1,34 @@
 module Netzke::Basepack::DataAdapters
   # A concrete adapter should implement all the public instance methods of this adapter in order to support all the functionality of Basepack components.
   class AbstractAdapter
+    attr_accessor :model_class
+
+    # Returns primary key name of the model
+    def primary_key
+      "id"
+    end
+
+    # Whether passed attribute config represents the primary key
+    def primary_key_attr?(a)
+      a[:name].to_s == primary_key
+    end
+
+    # List of model attribute names as strings
+    def attribute_names
+      []
+    end
+
+    # Returns a list of model attribute hashes, each containing `name`, `attr_type` and `default_value` (if set in the schema).
+    # For association columns the name can have the double-underscore format, e.g.: `author__first_name`.
+    # These attributes will be used by grids and forms to display default columns/fields.
+    def model_attributes
+      []
+    end
+
+    # Returns attribute type (as Symbol) given its name.
+    def attr_type(attr_name)
+      :string
+    end
 
     # Returns records based on passed params. Implements:
     # * pagination
@@ -14,7 +42,7 @@ module Netzke::Basepack::DataAdapters
     #   * :direction - "asc" or "desc"
     # * :limit - rows per page in pagination
     # * :start - page number in pagination
-    # * :scope - the scope as described in Netzke::Basepack::GridPanel
+    # * :scope - the scope as described in Netzke::Basepack::Grid
     # * :filter - Ext filters
     #
     # The `columns` parameter may be used to use joins to address the n+1 query problem, and receives an array of column configurations
@@ -24,7 +52,7 @@ module Netzke::Basepack::DataAdapters
 
     # gets the first record
     def first
-      @model_class.first
+      nil
     end
 
     # Returns record count based on passed params. Implements:
@@ -33,7 +61,7 @@ module Netzke::Basepack::DataAdapters
     #
     # `params` is a hash that contains the following keys:
     #
-    # * :scope - the scope as described in Netzke::Basepack::GridPanel
+    # * :scope - the scope as described in Netzke::Basepack::Grid
     # * :filter - Ext filters
     #
     # The `columns` parameter may be used to use joins to address the n+1 query problem, and receives an array of column configurations
@@ -74,14 +102,18 @@ module Netzke::Basepack::DataAdapters
     def get_property_type column
       column.type
     end
- 
+
     # should return true if column is virtual
-    def column_virtual? c
+    def virtual_attribute? c
       raise NotImplementedError
     end
 
     # Returns options for comboboxes in grids/forms
-    def combobox_options_for_column(column, method_options = {})
+    # +attr+ - column/field configuration; note that it will in its turn provide:
+    # * +name+ - attribute name
+    # * +scope+ - searching scope (optional)
+    # +query+ - whatever is entered in the combobox
+    def combo_data(attr, query = "")
       raise NotImplementedError
     end
 
@@ -99,6 +131,16 @@ module Netzke::Basepack::DataAdapters
     def destroy(ids)
     end
 
+    # Finds a record by id, return nil if not found
+    def find_record(id)
+      nil
+    end
+
+    # Build a hash of foreign keys and the associated model
+    def hash_fk_model
+      raise NotImplementedError
+    end
+
     # Changes records position (e.g. when acts_as_list is used in ActiveRecord).
     #
     # `params` is a hash with the following keys:
@@ -110,7 +152,7 @@ module Netzke::Basepack::DataAdapters
 
     # Returns a new record.
     def new_record(params = {})
-      @model_class.new(params)
+      nil
     end
 
     # give the data adapter the opportunity the set special options for
@@ -125,21 +167,59 @@ module Netzke::Basepack::DataAdapters
       record.errors.to_a
     end
 
-    # Finds a record by id, return nil if not found
-    def find_record(id)
-      @model_class.find(id)
+    # Whether an attribute is mass assignable. As second argument optionally takes the role.
+    def attribute_mass_assignable?(attr_name, role = :default)
+      true
     end
 
-    # Build a hash of foreign keys and the associated model
-    def hash_fk_model
-      raise NotImplementedError
+    # Whether an attribute (by name) is an association one
+    def association_attr?(attr_name)
+      !!attr_name.to_s.index("__")
     end
 
+    # Transforms a record to an array of values according to the passed attributes
+    # +attrs+ - array of attribute config hashes
+    def record_to_array(r, attrs)
+      []
+    end
 
+    # Transforms a record to a hash of values according to the passed attributes
+    # +attrs+ - array of attribute config hashes
+    def record_to_hash(r, attrs)
+      {}
+    end
+
+    # Returns a hash of association values for given record, e.g.:
+    #
+    #     {author__first_name: "Michael"}
+    def assoc_values(r, attr_hash) #:nodoc:
+      {}.tap do |values|
+        attr_hash.each_pair do |name,c|
+          values[name] = record_value_for_attribute(r, c, true) if association_attr?(c)
+        end
+      end
+    end
+
+    # Fetches the value specified by an (association) attribute
+    # If +through_association+ is true, get the value of the association by provided method, *not* the associated record's id
+    # E.g., author__name with through_association set to true may return "Vladimir Nabokov", while with through_association set to false, it'll return author_id for the current record
+    def record_value_for_attribute(r, a, through_association = false)
+    end
+
+    # Assigns new value to an (association) attribute in a given record
+    # +role+ - role provided for mass assignment protection
+    def set_record_value_for_attribute(record, attr, value, role = :default)
+    end
+
+    # Returns human attribute name
+    def human_attribute_name(name)
+      name.to_s.humanize
+    end
 
     # -- End of overridable methods
 
     # Abstract-adapter specifics
+    #
     #
 
     # Used to determine if the given adapter should be used for the passed in class.
@@ -159,6 +239,5 @@ module Netzke::Basepack::DataAdapters
     def initialize(model_class)
       @model_class = model_class
     end
-
   end
 end

@@ -1,28 +1,37 @@
 module Netzke
   module Basepack
-    # == Window
-    # Ext.Window-based component able to nest other Netzke components
+    # Ext.window.Window-based component. With +persistence+ option set to +true+, it will remember it's size, position, and maximized state.
     #
-    # == Features
-    # * Persistent position and dimensions
+    # Example:
     #
-    # == Instance configuration
-    # <tt>:item</tt> - nested Netzke component, e.g.:
+    #     class MyWindow < Netke::Basepack::Window
+    #       def configure
+    #         super
+    #         c.width = 800
+    #         c.height = 600
+    #         c.items = [:users] # nesting the `users` component declared below
+    #       end
     #
-    #     netzke :window, :item => {:class_name => "GridPanel", :model => "User"}
+    #       component :users
+    #     end
     class Window < Netzke::Base
-      js_base_class "Ext.window.Window"
+      js_configure do |c|
+        c.extend = "Ext.window.Window"
+        c.mixin
+      end
 
-      js_mixin
+      def js_configure(c)
+        super
+        [:x, :y, :width, :height].each { |p| c[p] = state[p].to_i if state[p] }
+        c.maximized = state[:maximized] if state[:maximized]
+      end
 
-      endpoint :set_size_and_position do |params|
-        update_persistent_options(
-          :x => params[:x].to_i,
-          :y => params[:y].to_i,
-          :width => params[:w].to_i,
-          :height => params[:h].to_i
-        )
-        {}
+      endpoint :set_size_and_position do |params, this|
+        [:x, :y, :width, :height].each {|p| state[p] = params[p].to_i}
+      end
+
+      endpoint :set_maximized do |maximized,this|
+        maximized ? state[:maximized] = true : state.delete(:maximized)
       end
     end
   end

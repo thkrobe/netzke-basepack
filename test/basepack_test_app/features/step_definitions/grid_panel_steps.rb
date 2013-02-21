@@ -4,20 +4,17 @@ When /^I select first row in the grid$/ do
   JS
 end
 
+# This step can randomly cause problems, by selectAll being seemingly ignored; not used atm.
 When /^I select all rows in the grid$/ do
   page.driver.browser.execute_script <<-JS
-    var components = [];
-    for (var cmp in Netzke.page) { components.push(cmp); }
-    var grid = Netzke.page[components[0]];
+    var grid = Ext.ComponentQuery.query('gridpanel')[0];
     grid.getSelectionModel().selectAll();
   JS
 end
 
 Then /^the grid should show (\d+) records$/ do |arg1|
   page.driver.browser.execute_script(<<-JS).should == arg1.to_i
-    var components = [];
-    for (var cmp in Netzke.page) { components.push(cmp); }
-    var grid = Netzke.page[components[0]];
+    var grid = Ext.ComponentQuery.query('gridpanel')[0];
     return grid.getStore().getCount();
   JS
 end
@@ -127,7 +124,7 @@ When /^I (?:drag|move) "([^"]*)" column before "([^"]*)"$/ do |header1, header2|
     cmp = Ext.ComponentQuery.query('gridpanel')[0];
     cmp.onColumnMove(null, null, #{indexi[0]}, #{indexi[1]});
   JS
-  step "I wait for the response from the server"
+  step "I wait for response from server"
 end
 
 Then /^I should see columns in order: "([^"]*)", "([^"]*)", "([^"]*)"$/ do |header1, header2, header3|
@@ -157,7 +154,7 @@ Then /^the grid should have records sorted by "([^"]*)"\s?(asc|desc)?$/ do |colu
         columnValues = [];
 
     grid.getStore().each(function(r){
-      var value = column.assoc ? r.get('_meta').associationValues[fieldName] : r.get(fieldName);
+      var value = column.assoc ? r.get('meta').associationValues[fieldName] : r.get(fieldName);
       if (value) columnValues.#{dir == "asc" ? "push" : "unshift"}(value);
     });
 
@@ -181,6 +178,7 @@ Then /^the grid's column "([^"]*)" should not be editable$/ do |column_name|
   JS
 end
 
-When /^I click the "([^"]*)" action icon$/ do |action_name|
-  find("img[data-qtip='#{action_name}']").click
-end
+# TODO: move to Communitypack
+# When /^I click the "([^"]*)" action icon$/ do |action_name|
+#   find("img[data-qtip='#{action_name}']").click
+# end

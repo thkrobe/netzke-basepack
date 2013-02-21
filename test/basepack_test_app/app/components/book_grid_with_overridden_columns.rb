@@ -1,8 +1,10 @@
-class BookGridWithOverriddenColumns < Netzke::Basepack::GridPanel
+class BookGridWithOverriddenColumns < Netzke::Basepack::Grid
   model "Book"
 
   # First way to override a column
-  override_column :title, :renderer => "uppercase"
+  column :title do |c|
+    c.renderer = "uppercase"
+  end
 
   # Second way to override a column
   # def default_config

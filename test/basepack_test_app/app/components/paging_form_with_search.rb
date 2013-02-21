@@ -12,7 +12,7 @@ class PagingFormWithSearch < Netzke::Basepack::BorderLayoutPanel
 
   component :paging_form_panel do
     {
-      :class_name => "Netzke::Basepack::PagingFormPanel",
+      :class_name => "Netzke::Basepack::PagingForm",
       :model => config[:model]
     }
   end
@@ -21,7 +21,7 @@ class PagingFormWithSearch < Netzke::Basepack::BorderLayoutPanel
     {
       :class_name => "Netzke::Basepack::SearchPanel",
       :model => config[:model],
-      :bbar => [:apply.action],
+      :bbar => [:apply],
       :preset_query => []
     }
   end

@@ -1,68 +1,74 @@
 module Netzke
   module Basepack
+    # An extension for {Grid} that allows specifying (multiple) action columns.
+    # Example:
+    #
+    #     class Books < Netzke::Basepack::Grid
+    #       include Netzke::Basepack::ActionColumn
+    #
+    #       def configure(c)
+    #         c.model = "Book"
+    #         super
+    #       end
+    #
+    #       def columns
+    #         super + [:basic_actions, :extra_actions]
+    #       end
+    #
+    #       column :actions do |c|
+    #         c.type = :action
+    #         c.actions = [
+    #           # default handler will be on_delete_row
+    #           {name: :delete_row, tooltip: "Delete row", icon: :delete}
+    #
+    #           # feel free to define more actions in this column
+    #         ]
+    #       end
+    #
+    #       js_configure do |c|
+    #         # handler for column action 'delete_row'
+    #         c.on_delete_row = <<-JS
+    #           function(record){
+    #             this.getSelectionModel().select(record);
+    #             this.onDel();
+    #           }
+    #         JS
+    #       end
+    #     end
     module ActionColumn
       extend ActiveSupport::Concern
 
       included do |base|
-
-        # Returns registered actions
-        class_attribute :registered_column_actions
-        self.registered_column_actions = []
-
-        js_include :action_column
-      end
-
-      module ClassMethods
-        # Register an action
-        def register_column_action(name)
-          self.registered_column_actions |= [name]
-        end
-
-        # Use this method to define column actions in your component, e.g.:
-        #
-        #     column_action :edit, :icon => "/images/icons/edit.png"
-        #
-        # TODO: List all options.
-        # TODO: think how it'll be possible to override individual column_actions (if need to bother at all)
-        def column_action(name, params = {})
-          params[:name] = name
-          params[:column] ||= "actions"
-          params[:icon] ||= "/extjs/examples/shared/icons/fam/cog.png"
-          params[:tooltip] = params[:tooltip].presence || name.to_s.humanize
-          params[:handler] ||= "on_#{name}"
-          register_column_action(name);
-          define_method "#{name}_column_action" do |record=nil| # TODO: this won't work in Ruby 1.8.7
-            params[:row_config] && record ? params.merge(params[:row_config].call(record, self)) : params
-          end
+        js_configure do |c|
+          c.require :action_column
         end
       end
 
-      def initial_columns(with_excluded = false)
-        orig_columns = super
+      # This can be optimized in order to generate less json in the column getter
+      def augment_column_config(c)
+        if c[:type] == :action
+          c.xtype = :netzkeactioncolumn
 
-        action_column_names = column_actions.map{ |action| action[:column] }.uniq
-        action_columns = orig_columns.select{ |c| action_column_names.include? c[:name] }
-
-        # Append the column if none found AND no explicit column configuration was provided
-        if action_columns.empty? && !config[:columns]
-          action_columns = [{:name => "actions"}.merge(config[:override_columns].try(:fetch, :actions, nil) || {})]
-          orig_columns += action_columns
-        end
-
-        action_columns.each do |c|
-          c[:xtype] = :netzkeactioncolumn
           c[:getter] = lambda do |r|
-            self.class.registered_column_actions.select{ |action_name| self.send("#{action_name}_column_action")[:column] == c[:name] }.map{ |action_name| self.send("#{action_name}_column_action", r) }.to_nifty_json
+            c.actions.map {|a| build_action_config(a)}.netzke_jsonify.to_json
           end
         end
 
-        orig_columns
+        super
       end
 
-      def column_actions
-        self.class.registered_column_actions.map{ |action_name| self.send("#{action_name}_column_action")}
-      end
+    private
 
+      def build_action_config(a)
+        a = {name: a} if a.is_a?(Symbol)
+        a.tap do |a|
+          a[:tooltip] ||= a[:name].to_s.humanize
+          a[:icon] ||= a[:name].to_sym
+          a[:handler] ||= "on_#{a[:name]}"
+
+          a[:icon] = "#{Netzke::Core.icons_uri}/#{a[:icon]}.png" if a[:icon].is_a?(Symbol)
+        end
+      end
     end
   end
 end

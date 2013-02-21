@@ -1,18 +1,23 @@
 class DoubleBookGrid < Netzke::Base
-  js_property :layout, :border
+  js_configure do |c|
+    c.layout = :border
+  end
 
-  def configuration
-    super.tap do |s|
-      s[:items] = [{
-        :region => :center,
-        :class_name => "Netzke::Basepack::GridPanel",
-        :model => "Book"
-      },{
-        :region => :south,
-        :height => 200,
-        :class_name => "Netzke::Basepack::GridPanel",
-        :model => "Book"
-      }]
-    end
+  def configure(c)
+    super
+    c.items = [:first_grid, :second_grid]
+  end
+
+  component :first_grid do |c|
+    c.klass = Netzke::Basepack::Grid
+    c.region = :center
+    c.model = "Book"
+  end
+
+  component :second_grid do |c|
+    c.klass = Netzke::Basepack::Grid
+    c.region = :south
+    c.height = 200
+    c.model = "Book"
   end
 end

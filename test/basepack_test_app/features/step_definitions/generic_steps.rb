@@ -14,10 +14,8 @@ When /I (?:sleep|wait) (\d+) (\w+)/ do |amount, unit|
   sleep amount.to_i.send(unit)
 end
 
-When /^I wait for the response from the server$/ do
-  sleep 0.5
-  page.wait_until{ page.driver.browser.execute_script("return !(Netzke.ajaxIsLoading() || Ext.Ajax.isLoading())") }
-  sleep 0.5
+When /^I wait for response from server$/ do
+  page.wait_until{ page.driver.browser.execute_script("return !Netzke.ajaxIsLoading()") }
 end
 
 When /^I go forward one page$/ do
@@ -41,4 +39,130 @@ Then /^I should see "([^"]*)" within paging toolbar$/ do |text|
   # page.driver.browser.execute_script(<<-JS).should == true
   #   Ext.ComponentQuery.query('pagingtoolbar')[0].query('tbtext[text="#{text}"]').length >= 1
   # JS
+end
+
+When /^I resize the ([^"]*) region to the size of (\d+)$/ do |region, size|
+  page.driver.browser.execute_script(<<-JS)
+    for (var prop in Netzke.page) {
+      var panel = Netzke.page[prop];
+      break;
+    }
+    var region = panel.down('panel[region="#{region}"]');
+
+    region.setSize({"#{["south", "north"].include?(region) ? "height" : "width"}": #{size}});
+  JS
+end
+
+Then /^the ([^"]*) region should have size of (\d+)$/ do |region, size|
+  size_property = [:west, :east].include?(region.to_sym) ? :Width : :Height
+
+  page.driver.browser.execute_script(<<-JS).should == size.to_i
+    for (var prop in Netzke.page) {
+      var panel = Netzke.page[prop];
+      break;
+    }
+    var region = panel.down('panel[region="#{region}"]');
+
+    return region.get#{size_property}();
+  JS
+end
+
+When /^I collapse the ([^"]*) region$/ do |region|
+  page.driver.browser.execute_script(<<-JS)
+    for (var prop in Netzke.page) {
+      var panel = Netzke.page[prop];
+      break;
+    }
+    var region = panel.down('panel[region="#{region}"]')
+    region.on('collapse', function(r){r.doneCollapsing = true});
+
+    region.collapse();
+  JS
+
+  wait_until do
+    page.driver.browser.execute_script(<<-JS)
+      for (var prop in Netzke.page) {
+        var panel = Netzke.page[prop];
+        break;
+      }
+      var region = panel.down('panel[region="#{region}"]')
+
+      return region.doneCollapsing;
+    JS
+  end
+end
+
+Then /^the ([^"]*) region should be (expanded|collapsed)$/ do |region, state|
+  page.driver.browser.execute_script(<<-JS).should state == "collapsed" ? be_true : be_false
+    for (var prop in Netzke.page) {
+      var panel = Netzke.page[prop];
+      break;
+    }
+    var region = panel.down('panel[region="#{region}"]');
+
+    return !!region.collapsed;
+  JS
+end
+
+When /^I expand the ([^"]*) region$/ do |region|
+  page.driver.browser.execute_script(<<-JS)
+    for (var prop in Netzke.page) {
+      var panel = Netzke.page[prop];
+      break;
+    }
+    var region = panel.down('panel[region="#{region}"]')
+    region.on('expand', function(r){r.doneExpanding = true});
+
+    region.expand();
+  JS
+  wait_until do
+    page.driver.browser.execute_script(<<-JS)
+      for (var prop in Netzke.page) {
+        var panel = Netzke.page[prop];
+        break;
+      }
+      var region = panel.down('panel[region="#{region}"]')
+      return region.doneExpanding;
+    JS
+  end
+end
+
+# Because sometimes "I press 'Text'" does not work due to some reason...
+When /^I press button with text "(.*?)"$/ do |text|
+  click_button page.driver.browser.execute_script(<<-JS) + '-btnEl'
+    var button = Ext.ComponentQuery.query("button[text='#{text}']")[0];
+    return button.id;
+  JS
+end
+
+Then /^I should not see window$/ do
+  page.driver.browser.execute_script(<<-JS).should == true
+    var out = true;
+    Ext.each(Ext.ComponentQuery.query('window'), function(w){
+      if (w.isVisible()) {
+        out = false;
+        return false;
+      }
+    });
+    return out;
+  JS
+end
+
+Then /^active tab should have button "(.*?)"$/ do |text|
+  page.driver.browser.execute_script(<<-JS).should == true
+    var tp = Ext.ComponentQuery.query('tabpanel')[0],
+        at = tp.getActiveTab();
+    return !!at.down('button[text="#{text}"]');
+  JS
+end
+
+Then /^expanded panel should have button "(.*?)"$/ do |text|
+  page.driver.browser.execute_script(<<-JS).should == true
+    for (var prop in Netzke.page) {
+      var panel = Netzke.page[prop];
+      break;
+    }
+    ap = panel.down("[collapsed=false]");
+    return !!ap.down('button[text="#{text}"]');
+  JS
 end

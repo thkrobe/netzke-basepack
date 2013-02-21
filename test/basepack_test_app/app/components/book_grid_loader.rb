@@ -1,24 +1,37 @@
 class BookGridLoader < Netzke::Base
-  js_property :layout, :fit
+  component :book_grid_one do |c|
+    c.klass = Netzke::Basepack::Grid
+    c.model = "Book"
+    c.title = "One"
+  end
 
-  component :book_grid_one, :class_name => "Netzke::Basepack::GridPanel", :model => "Book", :lazy_loading => true
-  component :book_grid_two, :class_name => "Netzke::Basepack::GridPanel", :model => "Book", :lazy_loading => true
+  component :book_grid_two do |c|
+    c.klass = Netzke::Basepack::Grid
+    c.model = "Book"
+    c.title = "Two"
+  end
 
   action :load_one
   action :load_two
 
-  js_method :on_load_one, <<-JS
-    function(){
-      this.loadNetzkeComponent({name: 'book_grid_one', container: this.id});
-    }
-  JS
+  js_configure do |c|
+    c.layout = :fit
 
-  js_method :on_load_two, <<-JS
-    function(){
-      this.loadNetzkeComponent({name: 'book_grid_two', container: this.id});
-    }
-  JS
+    c.on_load_one = <<-JS
+      function(){
+        this.netzkeLoadComponent('book_grid_one');
+      }
+    JS
 
-  js_property :bbar, [:load_one.action, :load_two.action]
+    c.on_load_two = <<-JS
+      function(){
+        this.netzkeLoadComponent('book_grid_two');
+      }
+    JS
+  end
 
+  def configure(c)
+    super
+    c.bbar = [:load_one, :load_two]
+  end
 end

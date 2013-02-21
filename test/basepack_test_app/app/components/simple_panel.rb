@@ -1,17 +1,26 @@
-class SimplePanel < Netzke::Basepack::Panel
+class SimplePanel < Netzke::Base
   action :update_html
 
-  js_properties :title  => "SimplePanel",
-                :html => "Original HTML",
-                :bbar => [:update_html.action]
-
-  endpoint :update_html_from_server do |params|
-    {:update_body_html => config[:update_text] || "HTML received from server"}
+  js_configure do |c|
+    c.title = "SimplePanel"
+    c.on_update_html = <<-JS
+      function(){
+        this.updateHtmlFromServer();
+      }
+    JS
   end
 
-  js_method :on_update_html, <<-JS
-    function(){
-      this.updateHtmlFromServer();
-    }
-  JS
+  def configure(c)
+    c.html = "Original HTML"
+    c.bbar = [:update_html]
+    super
+  end
+
+  def self.server_side_config_options
+    super << :update_text
+  end
+
+  endpoint :update_html_from_server do |params, this|
+    this[:update] = [config[:update_text] || "HTML received from server"]
+  end
 end

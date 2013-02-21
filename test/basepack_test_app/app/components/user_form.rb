@@ -1,21 +1,23 @@
-class UserForm < Netzke::Basepack::FormPanel
-  title User.model_name.human
+class UserForm < Netzke::Basepack::Form
+  def configure(c)
+    c.record = User.first
 
-  model "User"
+    super
 
-  record_id User.first.try(:id)
-
-  items [
-    {:xtype => 'fieldset', :title => "Basic Info", :checkboxToggle => true, :items => [
-      :first_name,
-      {:name => :last_name}
-    ]},
-    {:xtype => 'fieldset', :title => "Timestamps", :items => [
-      {:name => :created_at, :disabled => true},
-      {:name => :updated_at, :disabled => true}
-    ]},
-    :role__name
-  ]
+    c.model = "User"
+    c.title = User.model_name.human
+    c.items = [
+      {:xtype => 'fieldset', :title => "Basic Info", :checkboxToggle => true, :items => [
+        :first_name,
+        {:name => :last_name}
+      ]},
+      {:xtype => 'fieldset', :title => "Timestamps", :items => [
+        {:name => :created_at, :disabled => true},
+        {:name => :updated_at, :disabled => true}
+      ]},
+      { name: :role__name, empty_text: "Select a role" }
+    ]
+  end
 
   # Uncomment for visual mask testing
   # def netzke_submit_endpoint(params)

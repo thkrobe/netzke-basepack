@@ -1,40 +1,55 @@
 en:
   netzke:
     basepack:
-      grid_panel:
+      grid:
         actions:
-          add: Add
-          edit: Edit
-          del: Delete
-          apply: Apply
-          add_in_form: Add in form
-          edit_in_form: Edit in form
-          search: Search
+          add:
+            text: Add
+          edit:
+            text: Edit
+          del:
+            text: Delete
+            tooltip: Delete
+          apply:
+            text: Apply
+          add_in_form:
+            text: Add in form
+          edit_in_form:
+            text: Edit in form
+          search:
+            text: Search
 
         deleted_n_records: "Deleted %{n} record(s)"
         cannot_delete: "You don't have permissions to delete data"
         confirmation: Confirmation
         are_you_sure: Are you sure?
 
-        record_form_window:
-          actions:
-            ok: OK
-            cancel: Cancel
+      record_form_window:
+        actions:
+          ok:
+            text: OK
+          cancel:
+            text: Cancel
 
       search_window:
         title: Extended search
         actions:
-          search: Search
-          cancel: Cancel
+          search:
+            text: Search
+          cancel:
+            text: Cancel
 
-      form_panel:
+      form:
         actions:
-          edit: Edit
-          edit_tooltip: Edit
-          cancel: Cancel
-          cancel_tooltip: Cancel editing
-          apply: Apply
-          apply_tooltip: Apply changes
+          edit:
+            text: Edit
+            tooltip: Edit
+          cancel:
+            text: Cancel
+            tooltip: Cancel editing
+          apply:
+            text: Apply
+            tooltip: Apply changes
 
       search_panel:
         presets: Presets
@@ -47,10 +62,11 @@ en:
         before: Before
         after: After
 
-      paging_form_panel:
+      paging_form:
         actions:
-          search: Search
-          search_tooltip: Extended search
+          search:
+            text: Search
+            tooltip: Extended search
 
       query_builder:
         presets: Presets
@@ -61,17 +77,21 @@ en:
         delete_confirm: "Are you sure you want to delete preset '{0}'?"
         delete_confirm_title: "Deleting preset"
         actions:
-          clear_all: Clear
-          clear_all_tooltip: Clear all conditions
-          reset: Reset
-          reset_tooltip: Reset condition values
-          save_preset: Save preset
-          save_preset_tooltip: Save preset
-          delete_preset: Delete preset
-          delete_preset_tooltip: Delete preset
-          apply: Apply
-          apply_tooltip: Apply updated conditions
-
+          clear_all:
+            text: Clear
+            tooltip: Clear all conditions
+          reset:
+            text: Reset
+            tooltip: Reset condition values
+          save_preset:
+            text: Save preset
+            tooltip: Save preset
+          delete_preset:
+            text: Delete preset
+            tooltip: Delete preset
+          apply:
+            text: Apply
+            tooltip: Apply updated conditions
 
     formats:
       date: Y-m-d

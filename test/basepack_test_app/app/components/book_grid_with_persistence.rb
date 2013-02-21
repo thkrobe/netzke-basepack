@@ -1,8 +1,10 @@
 class BookGridWithPersistence < BookGrid
+  column :author__name do |c|
+    c.excluded = true
+  end
 
-  override_column :author__name, :included => false
-
-  def default_config
-    super.merge :persistence => true
+  def configure(c)
+    c.persistence = true
+    super
   end
 end

@@ -1,9 +1,4 @@
-Netzke::Basepack.setup do |config|
-  # config.icons_uri = "/images/icons"
-end
-
 Netzke::Core.setup do |config|
-  # config.ext_uri = "/extjs4"
-  # config.ext3_compat_uri = "/extjs-compatibility"
+  config.ext_uri = "http://cdn.sencha.com/ext-4.1.1a-gpl" if ENV['EXTJS_SRC'] == 'cdn'
   config.js_direct_max_retries = 0
 end

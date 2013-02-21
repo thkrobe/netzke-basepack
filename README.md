@@ -1,12 +1,26 @@
-# Netzke Basepack
+# Netzke Basepack [![Gem Version](https://badge.fury.io/rb/netzke-basepack.png)](http://badge.fury.io/rb/netzke-basepack) [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/netzke/netzke-basepack)
 
-A pack of pre-built [Netzke](http://netzke.org) components - such as grid, form, tab panel, etc.
+[RDocs](http://rdoc.info/github/netzke/netzke-basepack)
+
+A pack of pre-built [Netzke](http://netzke.org) components that can be used as building blocks for your webapps.
+
+## Included components
+
+Basepack includes the following components:
+
+* [Grid](http://rdoc.info/github/netzke/netzke-basepack/Netzke/Basepack/Grid) - a grid panel with a thick bag of features
+* [Form](http://rdoc.info/github/netzke/netzke-basepack/Netzke/Basepack/Form) - a form panel with automatic binding of fields
+* [TabPanel](http://rdoc.info/github/netzke/netzke-basepack/Netzke/Basepack/TabPanel) - a tab panel with support for lazy loading of nested components
+* [Accordion](http://rdoc.info/github/netzke/netzke-basepack/Netzke/Basepack/Accordion) - an accordion panel with support for lazy loading of nested components
+* [Window](http://rdoc.info/github/netzke/netzke-basepack/Netzke/Basepack/Window) - a window which stores its size, position, and maximized state
+
+Besides, Basepack implements persistence of region sizes and collapsed states of an arbitrary component that uses [border layout](http://docs.sencha.com/ext-js/4-1/#!/api/Ext.layout.container.Border) (see [ItemPersistence](http://rdoc.info/github/netzke/netzke-basepack/Netzke/Basepack/ItemPersistence)).
 
 ## Requirements
 
-* Ruby 1.9.2
-* Rails ~> 3.1.0
-* Ext JS ~> 4.1.x
+* Ruby ~> 1.9.2
+* Rails ~> 3.2.0
+* Ext JS ~> 4.1.0
 
 ## Installation
 
@@ -16,79 +30,58 @@ In your Gemfile:
 
 For the "edge" stuff, tell bundler to get the gem straight from GitHub:
 
-    gem 'netzke-basepack', :git => "git://github.com/skozlov/netzke-basepack.git"
+    gem 'netzke-basepack', :git => "git://github.com/netzke/netzke-basepack.git"
 
 ## Usage
 
 Embed a basepack component into a view as any other Netzke component, e.g.:
 
-  <%= netzke :books, :class_name => 'Netzke::Basepack::GridPanel', :model => 'Book' %>
+```erb
+<%= netzke :books, :class_name => 'Netzke::Basepack::Grid', :model => 'Book' %>
+```
 
-For more examples, see http://demo.netzke.com, and look into test/basepack_test_app.
+For more examples, see http://netzke-demo.herokuapp.com ([source code](https://github.com/netzke/netzke-demo)), and look into `test/basepack_test_app`.
 
-## Testing and playing with Netzke Basepack
+## Running tests
 
-Netzke Basepack is bundled with Cucumber and RSpec tests. If you would like to contribute to the project, you may want to learn how to [run the tests](https://github.com/skozlov/netzke-core/wiki/Automated-testing).
+Before being able run the test app and the tests themselves, you must link your Ext JS library to `test/basepack_test_app/public`, e.g. (from the gems's root):
 
-Besides, the bundled test application is a convenient [playground](https://github.com/skozlov/netzke-core/wiki/Playground) for those who search to experiment with the framework.
+    $ ln -s PATH/TO/YOUR/EXTJS/FILES test/basepack_test_app/public/extjs
 
-After starting up the test app, you can see the list of functional test components on the index page (along with links to the source code):
+The bundled `test/basepack_test_app` application used for automated testing can be easily run as a stand-alone Rails app. It's a good source of concise, focused examples. After starting the application, access any of the test components (located in `app/components`) by using the following url:
+
+    http://localhost:3000/components/{name of the component's class}
+
+For example [http://localhost:3000/components/BookGrid](http://localhost:3000/components/BookGrid)
+
+Also, you can see the list of test components on the index page (along with links to the source code):
 
     http://localhost:3000/
 
-## Note on testing with DataMapper/Sequel Support
-To install the test app with DataMapper or Sequel, put ORM=dm or ORM=sq
-into your environment.
-For example to set-up DataMapper support run
+To run all the tests (from the gem's root):
 
-    # in test/basepack_test_app
-    ORM=dm bundle install
+    $ rake
 
-To run the test app in DataMapper-Mode (will use DataMapper models instead of ActiveRecord models)
+This assumes that the Ext JS library is located/symlinked in `test/core_test_app/public/extjs`.
 
-    # in test/basepack_test_app
-    ORM=dm rails s
+*Sourcing Ext JS files from Sencha CDN is broken in Basepack atm*.
 
-To run the test suite
+## Using ORM other than ActiveRecord
 
-    # in test/basepack_test_app
-    ORM=dm bundle exec rake
+Using ActiveRecord as its default ORM, Basepack is designed to be extendable with data adapters for other ORMs. If you're thinking about implementing an adapter, `AbstractAdapter` and `ActiveRecordAdapter` classes can be used as a reference.
 
-etc.
-
-NOTE: netzke-basepack is not dependant on neither DataMapper nor Sequel.  It will pick the right DataAdapter for your models automatically.
-ActiveRecord is still included in Gemfile of the test app, as netzke-persistance is used which uses ActiveRecord.
-If you don't use netzke-persistence, then you don't need to include ActiveRecord.
-
-## DataMapper support
-DataMapper support is *incomplete*, as I didn't find a good way to sort by an association's column when the association needs a LEFT OUTER JOIN (i.e. nullable foreign key in many_to_one).
-
-## Sequel support
-
-CAVEATS:
-  - you can't use polymorphic associations for the time being, as the sequel_polymorphic plugin is not supported by netzke-basepack
-  - SearchPanel is broken atm. When it's fixed, Sequel support for
-    SearchPanel triggered queries should be implemented.
+There's some work being done in the direction of implementing [DataMapper](https://github.com/nomadcoder/netzke-basepack-dm) and [Sequel](https://github.com/nomadcoder/netzke-basepack-sequel) adapters, but at this moment the code is broken.
 
 ## Icons support
+
 Netzke Basepack can make use of FamFamFam Silk icon set (http://www.famfamfam.com/archive/silk-icons-thats-your-lot/). To enable this, download the icons and put the "icons" folder into your app's public/images folder. Then restart your application.
 
-## Ext 3 support
-Versions 0.6.x are for you if you're using Ext 3 (*hardly maintained*)
-
-## Rails 2 support
-With Rails 2 (and Ext 3 only), use versions 0.5.x (*not maintained*)
-
-## More info
-Official project site: http://netzke.org
-
-Twitter:
-
-* latest news about Netzke: http://twitter.com/netzke
-* author's tweets on osx, productivity and what not:  http://twitter.com/nomadcoder
-
-Many (if a bit outdated) tutorials: http://blog.writelesscode.com
+## Useful links
+* [Project website](http://netzke.org)
+* [Live-demo](http://netzke-demo.herokuapp.com)
+* [Twitter](http://twitter.com/netzke) - latest news about the framework
 
 ---
-Copyright (c) 2008-2011 NomadCoder, released under the MIT license
-Note, that Ext JS itself is licensed [differently](http://www.sencha.com/products/extjs/license/)
+Copyright (c) 2008-2012 [nomadcoder](https://twitter.com/nomadcoder), released under the MIT license (see LICENSE).
+
+**Note** that Ext JS is licensed [differently](http://www.sencha.com/products/extjs/license/), and you may need to purchase a commercial license in order to use it in your projects!

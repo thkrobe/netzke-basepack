@@ -1,10 +1,8 @@
-class BookGridWithPaging < Netzke::Basepack::GridPanel
-  js_property :title, "Books with paging"
-
-  def default_config
-    super.merge(
-      :model => "Book",
-      :rows_per_page => 2
-    )
+class BookGridWithPaging < Netzke::Basepack::Grid
+  def configure(c)
+    c.model = "Book"
+    c.title = "Books with paging"
+    c.rows_per_page = 2
+    super
   end
 end
