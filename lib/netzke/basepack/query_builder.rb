@@ -40,7 +40,7 @@ module Netzke
 
       def js_configure(c)
         super
-        c.preset_store = state[:presets].blank? ? [[[], ""]] : state[:presets].map{ |s| [s["query"], s["name"]] }
+        c.preset_store = state[:presets].blank? ? [] : state[:presets].map{ |s| [s["query"], s["name"]] }
         c.bbar = (config[:bbar] || []) + [:clear_all, :reset, "->", I18n.t('netzke.basepack.query_builder.presets'), :preset_selector, :save_preset, :delete_preset ]
       end
 
