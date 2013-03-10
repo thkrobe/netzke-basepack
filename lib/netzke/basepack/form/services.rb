@@ -26,6 +26,10 @@ module Netzke
               this.set_form_values(js_record_data)
               this.success = true # respond to classic form submission with {success: true}
               this.on_submit_success # inform the Netzke endpoint caller about success
+              data_adapter.errors_array(@record).each do |error|
+                flash :error => error
+              end
+              this.netzke_feedback(@flash)
             else
               # flash eventual errors
               data_adapter.errors_array(@record).each do |error|
