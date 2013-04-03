@@ -46,6 +46,7 @@ module Netzke
 
         configure_locked(c)
         configure_bbar(c)
+        configure_apply_on_return(c)
 
         if data_adapter
           c.pri = data_adapter.primary_key
@@ -75,9 +76,12 @@ module Netzke
       end
 
       def configure_bbar(c)
-        c[:bbar] = [:apply] if c[:bbar].nil? && !c[:read_only]
+        c[:bbar] = ["->", :apply] if c[:bbar].nil? && !c[:read_only]
       end
 
+      def configure_apply_on_return(c)
+        c[:apply_on_return] = c[:apply_on_return].nil? ? true : !!c[:apply_on_return]
+      end
 
       # Extra JavaScripts and stylesheets
       css_configure do |c|

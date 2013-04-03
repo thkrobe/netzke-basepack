@@ -55,30 +55,37 @@ module Netzke::Basepack::DataAdapters
 
       # apply sorting if needed
       if params[:sort] && sort_params = params[:sort].first
-        assoc, method = sort_params["property"].split('__')
         dir = sort_params["direction"].downcase
-
-        # if a sorting scope is set, call the scope with the given direction
         column = columns.detect { |c| c[:name] == sort_params["property"] }
-        if column.has_key?(:sorting_scope)
-          relation = relation.send(column[:sorting_scope].to_sym, dir.to_sym)
-        else
-          relation = if method.nil?
-            relation.order("#{@model_class.table_name}.#{assoc} #{dir}")
-          else
-            assoc = @model_class.reflect_on_association(assoc.to_sym)
-            relation.joins(assoc.name).order("#{assoc.klass.table_name}.#{method} #{dir}")
-          end
-        end
+        relation = apply_sorting(relation, column, dir)
       end
 
-      page = params[:limit] ? params[:start].to_i/params[:limit].to_i + 1 : 1
+      #page = params[:limit] ? params[:start].to_i/params[:limit].to_i + 1 : 1
       if params[:limit]
         relation.offset(params[:start]).limit(params[:limit])
       else
         relation.all
       end
     end
+
+    def apply_sorting(relation, column, dir)
+      assoc, method = column[:name].split('__')
+
+      # if a sorting scope is set, call the scope with the given direction
+      if column.has_key?(:sorting_scope)
+        relation = relation.send(column[:sorting_scope].to_sym, dir.to_sym)
+      else
+        relation = if method.nil?
+          relation.order("#{@model_class.table_name}.#{assoc} #{dir}")
+        else
+          assoc = @model_class.reflect_on_association(assoc.to_sym)
+          relation.joins(assoc.name).order("#{assoc.klass.table_name}.#{method} #{dir}")
+        end
+      end
+
+      relation
+    end
+    protected :apply_sorting
 
     def count_records(params, columns=[])
       # build initial relation based on passed params
@@ -122,11 +129,14 @@ module Netzke::Basepack::DataAdapters
 
         if assoc.klass.column_names.include?(assoc_method)
           # apply query
-          relation = relation.where(["#{assoc_method} like ?", "%#{query}%"]) if query.present?
+          assoc_arel_table = assoc.klass.arel_table
+
+          relation = relation.where(assoc_arel_table[assoc_method].matches("%#{query}%"))  if query.present?
           relation.all.map{ |r| [r.id, r.send(assoc_method)] }
         else
+          query.downcase!
           # an expensive search!
-          relation.all.map{ |r| [r.id, r.send(assoc_method)] }.select{ |id,value| value.include?(query) }
+          relation.all.map{ |r| [r.id, r.send(assoc_method)] }.select{ |id,value| value.downcase.include?(query) }
         end
 
       else
@@ -216,7 +226,8 @@ module Netzke::Basepack::DataAdapters
         split = a[:name].to_s.split(/\.|__/)
         assoc = @model_class.reflect_on_association(split.first.to_sym)
         if through_association
-          split.inject(r) do |r,m| # TODO: do we really need to descend deeper than 1 level?
+          split.inject(r) do |r,m| # Do we *really* need to descend deeper than 1 level?
+            return nil if r.nil?
             if r.respond_to?(m)
               r.send(m)
             else
@@ -291,8 +302,6 @@ module Netzke::Basepack::DataAdapters
 
     # An ActiveRecord::Relation instance encapsulating all the necessary conditions.
     def get_relation(params = {})
-      @arel = @model_class.arel_table
-
       relation = @model_class.scoped
 
       relation = apply_column_filters(relation, params[:filter]) if params[:filter]
@@ -342,7 +351,6 @@ module Netzke::Basepack::DataAdapters
     #      relation.where(["id > ?", 10]).where(["food_name like ?", "%pizza%"])
     def apply_column_filters(relation, column_filter)
       res = relation
-      operator_map = {"lt" => "<", "gt" => ">", "eq" => "="}
 
       # these are still JSON-encoded due to the migration to Ext.direct
       column_filter=JSON.parse(column_filter)
@@ -351,15 +359,16 @@ module Netzke::Basepack::DataAdapters
         if method
           assoc = @model_class.reflect_on_association(assoc.to_sym)
           if assoc.klass.column_names.include? method
-            field = [assoc.klass.table_name, method].join('.').to_sym
+            field = method
+            arel_table = assoc.klass.arel_table
           end
         else
           field = assoc.to_sym
+          arel_table = @model_class.arel_table
         end
 
         value = v["value"]
-
-        op = operator_map[v['comparison']]
+        op = v['comparison']
 
         col_filter = @cls.inject(nil) { |fil, col|
           if col.is_a?(Hash) && col[:filter_with] && col[:name].to_sym == v['field'].to_sym
@@ -372,38 +381,56 @@ module Netzke::Basepack::DataAdapters
           col_filter = nil
           next
         end
+
+
         case v["type"]
         when "string"
-          res = res.where(["#{field} like ?", "%#{value}%"])
+          res = res.where(arel_table[field].matches("%#{value}%"))
         when "date"
           # convert value to the DB date
-          value.match /(\d\d)\/(\d\d)\/(\d\d\d\d)/
-          res = res.where("#{field} #{op} ?", "#{$3}-#{$1}-#{$2}".to_time)
+          value.match(/(\d\d)\/(\d\d)\/(\d\d\d\d)/)
+          if op == 'eq'
+            res = res.where(arel_table[field].ge("#{$3}-#{$1}-#{$2}".to_date.beginning_of_day))
+            res = res.where(arel_table[field].le("#{$3}-#{$1}-#{$2}".to_date.end_of_day))
+          else
+            res = res.where(arel_table[field].send(op, "#{$3}-#{$1}-#{$2}".to_time))
+          end
         when "numeric"
-          res = res.where(["#{field} #{op} ?", value])
-        else
-          res = res.where(["#{field} = ?", value])
+          res = res.where(arel_table[field].send(op, value))
+        else # boolean
+          res = res.where(arel_table[field].eq(value))
         end
       end
 
       res
     end
-
     protected :apply_column_filters
 
     def predicates_for_and_conditions(conditions)
       return nil if conditions.empty?
 
       predicates = conditions.map do |q|
+        assoc, method = q["attr"].split('__')
+        if method
+          assoc = @model_class.reflect_on_association(assoc.to_sym)
+          assoc_arel = assoc.klass.arel_table
+          attr = method
+          arel_table = Arel::Table.new(assoc.klass.table_name.to_sym)
+        else
+          attr = assoc
+          arel_table = @model_class.arel_table
+        end
+
         value = q["value"]
+
         case q["operator"]
         when "contains"
-          @arel[q["attr"]].matches "%#{value}%"
+          arel_table[attr].matches "%#{value}%"
         else
           if value == false || value == true
-            @arel[q["attr"]].eq(value ? 1 : 0)
+            arel_table[attr].eq(value ? 1 : 0)
           else
-            @arel[q["attr"]].send(q["operator"], value)
+            arel_table[attr].send(q["operator"], value)
           end
         end
       end
